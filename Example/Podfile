@@ -1,0 +1,13 @@
+use_frameworks!
+
+platform :ios, '9.0'
+
+target 'Nuke-Avif-Plugin_Example' do
+  pod 'Nuke-Avif-Plugin', :path => '../'
+
+  target 'Nuke-Avif-Plugin_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end
