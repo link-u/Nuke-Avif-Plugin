@@ -9,7 +9,7 @@ import Foundation
 import Accelerate
 import libavif
 
-func extract8(avif: avifImage, chromaShift: (x: Int, y: Int)) -> (buffers: (yp: vImage_Buffer, cb: vImage_Buffer, cr: vImage_Buffer), disposers: [Disposer]) {
+func extract8(avif: avifImage, chromaShift: (x: Int, y: Int), pixelRange: vImage_YpCbCrPixelRange) -> (buffers: (yp: vImage_Buffer, cb: vImage_Buffer, cr: vImage_Buffer), disposers: [Disposer]) {
     let ypBuffer = vImage_Buffer(data: tuple3Index(avif.yuvPlanes, AVIF_CHAN_Y),
                                  height: vImagePixelCount(avif.height),
                                  width: vImagePixelCount(avif.width),
@@ -29,7 +29,8 @@ func extract8(avif: avifImage, chromaShift: (x: Int, y: Int)) -> (buffers: (yp: 
                 []
             )
         } else {
-            let dummyCbData = UnsafeMutableRawPointer.allocate(byteCount: cbcrWidth * MemoryLayout<Int>.size, alignment: 0)
+            let dummyCbData = UnsafeMutableRawPointer.allocate(byteCount: cbcrWidth * MemoryLayout<UInt8>.size, alignment: 0)
+            dummyCbData.initializeMemory(as: UInt8.self, repeating: UInt8(pixelRange.CbCr_bias), count: cbcrWidth)
             return (
                 .init(data: dummyCbData,
                       height: vImagePixelCount(cbcrHeight),
@@ -52,6 +53,7 @@ func extract8(avif: avifImage, chromaShift: (x: Int, y: Int)) -> (buffers: (yp: 
             )
         } else {
             let dummyCrData = UnsafeMutableRawPointer.allocate(byteCount: cbcrWidth * MemoryLayout<Int>.size, alignment: 0)
+            dummyCrData.initializeMemory(as: UInt8.self, repeating: UInt8(pixelRange.CbCr_bias), count: cbcrWidth)
             return (
                 .init(data: dummyCrData,
                                       height: vImagePixelCount(cbcrHeight),

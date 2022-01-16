@@ -13,7 +13,7 @@ func converter8(
     avif: avifImage,
     yp: UnsafePointer<vImage_Buffer>, cb: UnsafePointer<vImage_Buffer>, cr: UnsafePointer<vImage_Buffer>,
     characteristics: Characteristics
-) throws -> vImage_Buffer {
+) throws -> vImage_Buffer {    
     let usePseudoARGBBuffer = characteristics.monochrome || !characteristics.hasAlpha
     
     func argbBuffer() -> ImageBufferWithDisposables {

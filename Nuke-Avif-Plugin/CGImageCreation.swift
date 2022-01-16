@@ -12,7 +12,7 @@ import libavif
 extension CGImage {
     static func create(from avif: avifImage, characteristics: Characteristics, buffer: vImage_Buffer) throws -> CGImage {
         guard let provider = CGDataProvider(dataInfo: nil, data: buffer.data, size: buffer.rowBytes * Int(buffer.height), releaseData: { info, data, size in data.deallocate() }) else { throw CGDataProviderCreationError() }
-        let colorSpace = try calcColorSpaceRGB(avif: avif)
+        let colorSpace = characteristics.monochrome ? try calcColorSpaceMonochrome(avif: avif) : try calcColorSpaceRGB(avif: avif)
         
         let imageRef = CGImage(width: avif.iWidth,
                                height: avif.iHeight,

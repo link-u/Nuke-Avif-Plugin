@@ -2,7 +2,7 @@
 //  Buffer.swift
 //  Nuke-Avif-Plugin
 //
-//  Created by murakami on 2022/01/12.
+//  Created by murakami on 2022/01/17.
 //
 
 import Accelerate

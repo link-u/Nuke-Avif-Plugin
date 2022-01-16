@@ -42,7 +42,7 @@ public struct AvifImageDecoder: Nuke.ImageDecoding {
     
     private func createCGImage8(avif: inout avifImage) throws -> CGImage {
         let characteristics = try extractCharacteristics8(avif: &avif)
-        let (buffers, cbcrDisposers) = extract8(avif: avif, chromaShift: (x: Int(characteristics.reformatState.formatInfo.chromaShiftX), y: Int(characteristics.reformatState.formatInfo.chromaShiftY)))
+        let (buffers, cbcrDisposers) = extract8(avif: avif, chromaShift: (x: Int(characteristics.reformatState.formatInfo.chromaShiftX), y: Int(characteristics.reformatState.formatInfo.chromaShiftY)), pixelRange: characteristics.pixelRange)
         var yp = buffers.yp
         var cb = buffers.cb
         var cr = buffers.cr
