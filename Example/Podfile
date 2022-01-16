@@ -1,10 +1,16 @@
-use_frameworks!
-
-platform :ios, '9.0'
+install! 'cocoapods', :generate_multiple_pod_projects => true
+platform :ios, '11.0'
+use_modular_headers!
 
 target 'Nuke-Avif-Plugin_Example' do
   pod 'Nuke-Avif-Plugin', :path => '../'
+  pod 'Nuke'
+  pod 'libavif/libdav1d-8bit', :podspec => 'https://raw.githubusercontent.com/link-u/libavif-Xcode/workaround/dav1d-static/libavif.podspec'
+  pod 'libdav1d/8bit', :git => 'git@github.com:link-u/libdav1d-static.git'
 
+  pod 'RxSwift'
+  pod 'RxCocoa'
+  
   target 'Nuke-Avif-Plugin_Tests' do
     inherit! :search_paths
 

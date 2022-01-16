@@ -1,0 +1,59 @@
+PODS:
+  - libavif/core (0.8.1)
+  - libavif/libdav1d-8bit (0.8.1):
+    - libavif/core
+    - libdav1d/8bit
+  - libdav1d/8bit (0.0.6)
+  - Nuke (9.5.0)
+  - Nuke-Avif-Plugin (0.1.0):
+    - libavif/libdav1d-8bit
+    - libdav1d/8bit
+    - Nuke (~> 9.0)
+  - RxCocoa (6.2.0):
+    - RxRelay (= 6.2.0)
+    - RxSwift (= 6.2.0)
+  - RxRelay (6.2.0):
+    - RxSwift (= 6.2.0)
+  - RxSwift (6.2.0)
+
+DEPENDENCIES:
+  - libavif/libdav1d-8bit (from `https://raw.githubusercontent.com/link-u/libavif-Xcode/workaround/dav1d-static/libavif.podspec`)
+  - "libdav1d/8bit (from `git@github.com:link-u/libdav1d-static.git`)"
+  - Nuke
+  - Nuke-Avif-Plugin (from `../`)
+  - RxCocoa
+  - RxSwift
+
+SPEC REPOS:
+  https://github.com/CocoaPods/Specs.git:
+    - Nuke
+  trunk:
+    - RxCocoa
+    - RxRelay
+    - RxSwift
+
+EXTERNAL SOURCES:
+  libavif:
+    :podspec: https://raw.githubusercontent.com/link-u/libavif-Xcode/workaround/dav1d-static/libavif.podspec
+  libdav1d:
+    :git: "git@github.com:link-u/libdav1d-static.git"
+  Nuke-Avif-Plugin:
+    :path: "../"
+
+CHECKOUT OPTIONS:
+  libdav1d:
+    :commit: e0ce9a91299a42463f502011346e212ef31f4be6
+    :git: "git@github.com:link-u/libdav1d-static.git"
+
+SPEC CHECKSUMS:
+  libavif: b317b1c7c3a11c84068e0305e082e94c12e7cdf1
+  libdav1d: c475982c8c38023655f89bd2e228a765347cd760
+  Nuke: 6f400a4ea957e09149ec335a3c6acdcc814d89e4
+  Nuke-Avif-Plugin: 728ef9511d57583dfd55b620781e7514ce2cdcf0
+  RxCocoa: 4baf94bb35f2c0ab31bc0cb9f1900155f646ba42
+  RxRelay: e72dbfd157807478401ef1982e1c61c945c94b2f
+  RxSwift: d356ab7bee873611322f134c5f9ef379fa183d8f
+
+PODFILE CHECKSUM: 72ffcb32a0aeed1025797d7b13314fe84b09209e
+
+COCOAPODS: 1.10.1

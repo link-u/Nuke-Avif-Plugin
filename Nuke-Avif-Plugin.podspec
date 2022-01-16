@@ -21,16 +21,18 @@ Pod::Spec.new do |s|
 TODO: Add long description of the pod here.
                        DESC
 
-  s.homepage         = 'https://github.com/murakami/Nuke-Avif-Plugin'
+  s.homepage         = 'https://github.com/link-u/Nuke-Avif-Plugin'
   # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'murakami' => 'zonaryfund@gmail.com' }
-  s.source           = { :git => 'https://github.com/murakami/Nuke-Avif-Plugin.git', :tag => s.version.to_s }
-  # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
+  s.source           = { :git => 'git@github.com:link-u/Nuke-Avif-Plugin.git', :tag => s.version.to_s }
+  
+  s.ios.deployment_target = '11.0'
 
-  s.ios.deployment_target = '9.0'
-
-  s.source_files = 'Nuke-Avif-Plugin/Classes/**/*'
+  s.source_files = 'Nuke-Avif-Plugin/**/*'
+  s.dependency 'Nuke', '~> 9.0'
+  s.dependency 'libavif/libdav1d-8bit'
+  s.dependency 'libdav1d/8bit'
   
   # s.resource_bundles = {
   #   'Nuke-Avif-Plugin' => ['Nuke-Avif-Plugin/Assets/*.png']
