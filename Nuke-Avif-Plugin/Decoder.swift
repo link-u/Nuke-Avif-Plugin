@@ -1,3 +1,10 @@
+//
+//  Decoder.swift
+//  Nuke-Avif-Plugin
+//
+//  Created by murakami on 2021/05/27.
+//
+
 import Foundation
 import Accelerate
 import Nuke
