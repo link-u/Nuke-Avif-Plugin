@@ -322,22 +322,22 @@ func converter8(
             throw FormatError(message: "Invalid pixel format.")
         }
     }()
+    defer {
+        if characteristics.monochrome || !characteristics.hasAlpha {
+            argbBuffer.disposers.forEach { $0() }
+        }
+    }
     
     var (alphaBuffer, alphaDisposers) = try { () -> (vImage_Buffer?, [Disposer]?) in
         guard (characteristics.hasAlpha) else { return (nil, nil) }
         return try alpha()
     }()
+    defer { alphaDisposers?.forEach { $0() } }
     
-    do {
-        if characteristics.monochrome {
-            return try monochromeCombine(argbBuffer: &argbBuffer.buffer, alphaBuffer: &alphaBuffer)
-        } else {
-            return try colorCombine(argbBuffer: &argbBuffer.buffer, alphaBuffer: &alphaBuffer)
-        }
-    } catch let e {
-        argbBuffer.disposers.forEach { $0() }
-        alphaDisposers?.forEach { $0() }
-        throw e
+    if characteristics.monochrome {
+        return try monochromeCombine(argbBuffer: &argbBuffer.buffer, alphaBuffer: &alphaBuffer)
+    } else {
+        return try colorCombine(argbBuffer: &argbBuffer.buffer, alphaBuffer: &alphaBuffer)
     }
 }
 

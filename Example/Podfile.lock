@@ -1,13 +1,20 @@
 PODS:
+  - libaom (2.0.2):
+    - libvmaf
+  - libavif (0.8.1):
+    - libavif/libaom (= 0.8.1)
   - libavif/core (0.8.1)
+  - libavif/libaom (0.8.1):
+    - libaom (>= 1.0.2)
+    - libavif/core
   - libavif/libdav1d-8bit (0.8.1):
     - libavif/core
     - libdav1d/8bit
   - libdav1d/8bit (0.0.6)
+  - libvmaf (2.2.0)
   - Nuke (9.5.0)
   - Nuke-Avif-Plugin (0.0.1):
-    - libavif/libdav1d-8bit
-    - libdav1d/8bit
+    - libavif
     - Nuke (~> 9.0)
   - RxCocoa (6.2.0):
     - RxRelay (= 6.2.0)
@@ -28,6 +35,8 @@ SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
     - Nuke
   trunk:
+    - libaom
+    - libvmaf
     - RxCocoa
     - RxRelay
     - RxSwift
@@ -46,10 +55,12 @@ CHECKOUT OPTIONS:
     :git: "git@github.com:link-u/libdav1d-static.git"
 
 SPEC CHECKSUMS:
+  libaom: 9bb51e0f8f9192245e3ca2a1c9e4375d9cbccc52
   libavif: b317b1c7c3a11c84068e0305e082e94c12e7cdf1
   libdav1d: c475982c8c38023655f89bd2e228a765347cd760
+  libvmaf: 8d61aabc2f4ed3e6591cf7406fa00a223ec11289
   Nuke: 6f400a4ea957e09149ec335a3c6acdcc814d89e4
-  Nuke-Avif-Plugin: 0d1d650d829c41503e6afb7c9ba46478b8c6e53d
+  Nuke-Avif-Plugin: edf2dd3f773892b213c47fe469f3023a9b47f718
   RxCocoa: 4baf94bb35f2c0ab31bc0cb9f1900155f646ba42
   RxRelay: e72dbfd157807478401ef1982e1c61c945c94b2f
   RxSwift: d356ab7bee873611322f134c5f9ef379fa183d8f

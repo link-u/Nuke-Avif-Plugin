@@ -1,5 +1,5 @@
 import XCTest
-import Nuke_Avif_Plugin
+import NukeAvifPlugin
 
 class Tests: XCTestCase {
     
