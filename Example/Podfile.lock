@@ -5,7 +5,7 @@ PODS:
     - libdav1d/8bit
   - libdav1d/8bit (0.0.6)
   - Nuke (9.5.0)
-  - Nuke-Avif-Plugin (0.1.0):
+  - Nuke-Avif-Plugin (0.0.1):
     - libavif/libdav1d-8bit
     - libdav1d/8bit
     - Nuke (~> 9.0)
@@ -49,7 +49,7 @@ SPEC CHECKSUMS:
   libavif: b317b1c7c3a11c84068e0305e082e94c12e7cdf1
   libdav1d: c475982c8c38023655f89bd2e228a765347cd760
   Nuke: 6f400a4ea957e09149ec335a3c6acdcc814d89e4
-  Nuke-Avif-Plugin: 728ef9511d57583dfd55b620781e7514ce2cdcf0
+  Nuke-Avif-Plugin: 0d1d650d829c41503e6afb7c9ba46478b8c6e53d
   RxCocoa: 4baf94bb35f2c0ab31bc0cb9f1900155f646ba42
   RxRelay: e72dbfd157807478401ef1982e1c61c945c94b2f
   RxSwift: d356ab7bee873611322f134c5f9ef379fa183d8f

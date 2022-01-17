@@ -7,20 +7,16 @@
 //
 
 import UIKit
-import Nuke
-import Nuke_Avif_Plugin
+import NukeAvifPlugin
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
 
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
-        Nuke.ImageDecoderRegistry.shared.register { context in
-            AvifImageDecoder()
-        }
+        AvifImageDecoder.enable()
         return true
     }
 

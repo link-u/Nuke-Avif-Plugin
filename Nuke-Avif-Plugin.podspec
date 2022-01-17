@@ -8,8 +8,8 @@
 
 Pod::Spec.new do |s|
   s.name             = 'Nuke-Avif-Plugin'
-  s.version          = '0.1.0'
-  s.summary          = 'A short description of Nuke-Avif-Plugin.'
+  s.version          = '0.0.1'
+  s.summary          = "Nuke's Plugin for Avif."
 
 # This description is used to generate tags and improve search results.
 #   * Think: What does it do? Why did you write it? What is the focus?
@@ -22,7 +22,6 @@ TODO: Add long description of the pod here.
                        DESC
 
   s.homepage         = 'https://github.com/link-u/Nuke-Avif-Plugin'
-  # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'murakami' => 'zonaryfund@gmail.com' }
   s.source           = { :git => 'git@github.com:link-u/Nuke-Avif-Plugin.git', :tag => s.version.to_s }
@@ -31,8 +30,8 @@ TODO: Add long description of the pod here.
 
   s.source_files = 'Nuke-Avif-Plugin/**/*'
   s.dependency 'Nuke', '~> 9.0'
-  s.dependency 'libavif/libdav1d-8bit'
-  s.dependency 'libdav1d/8bit'
+  s.dependency 'libavif'
+  s.module_name = 'NukeAvifPlugin'
   
   # s.resource_bundles = {
   #   'Nuke-Avif-Plugin' => ['Nuke-Avif-Plugin/Assets/*.png']

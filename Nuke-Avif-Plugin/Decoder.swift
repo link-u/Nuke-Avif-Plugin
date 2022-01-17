@@ -17,8 +17,6 @@ public extension ImageType {
 }
 
 public struct AvifImageDecoder: Nuke.ImageDecoding {
-    public init() { }
-    
     public func decode(_ data: Data) -> ImageContainer? {
         var rawData = avifROData(data: data.withUnsafeBytes { $0.bindMemory(to: UInt8.self).baseAddress }, size: data.count)
         let decoder = avifDecoderCreate()
@@ -58,5 +56,22 @@ public struct AvifImageDecoder: Nuke.ImageDecoding {
         let convertedBuffer = try converter8(avif: avif, yp: &yp, cb: &cb, cr: &cr, characteristics: characteristics)
         
         return try CGImage.create(from: avif, characteristics: characteristics, buffer: convertedBuffer)
+    }
+}
+
+public extension AvifImageDecoder {
+    static func enable() {
+        Nuke.ImageDecoderRegistry.shared.register { context in
+            return context.data.isAvifData ? AvifImageDecoder() : nil
+        }
+    }
+}
+
+public extension Data {
+    var isAvifData: Bool {
+        return withUnsafeBytes { bytes in
+            var roData = avifROData(data: bytes.bindMemory(to: UInt8.self).baseAddress, size: count)
+            return avifPeekCompatibleFileType(&roData) == AVIF_TRUE
+        }
     }
 }
