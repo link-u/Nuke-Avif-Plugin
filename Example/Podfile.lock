@@ -10,18 +10,18 @@ PODS:
   - libavif/libdav1d-8bit (0.8.1):
     - libavif/core
     - libdav1d/8bit
-  - libdav1d/8bit (0.0.6)
+  - libdav1d/8bit (0.0.7)
   - libvmaf (2.2.0)
-  - Nuke (9.5.0)
+  - Nuke (10.7.1)
   - Nuke-Avif-Plugin (0.0.1):
     - libavif
-    - Nuke (~> 9.0)
-  - RxCocoa (6.2.0):
-    - RxRelay (= 6.2.0)
-    - RxSwift (= 6.2.0)
-  - RxRelay (6.2.0):
-    - RxSwift (= 6.2.0)
-  - RxSwift (6.2.0)
+    - Nuke (~> 10.0)
+  - RxCocoa (6.5.0):
+    - RxRelay (= 6.5.0)
+    - RxSwift (= 6.5.0)
+  - RxRelay (6.5.0):
+    - RxSwift (= 6.5.0)
+  - RxSwift (6.5.0)
 
 DEPENDENCIES:
   - libavif/libdav1d-8bit (from `https://raw.githubusercontent.com/link-u/libavif-Xcode/workaround/dav1d-static/libavif.podspec`)
@@ -32,11 +32,10 @@ DEPENDENCIES:
   - RxSwift
 
 SPEC REPOS:
-  https://github.com/CocoaPods/Specs.git:
-    - Nuke
   trunk:
     - libaom
     - libvmaf
+    - Nuke
     - RxCocoa
     - RxRelay
     - RxSwift
@@ -51,20 +50,20 @@ EXTERNAL SOURCES:
 
 CHECKOUT OPTIONS:
   libdav1d:
-    :commit: e0ce9a91299a42463f502011346e212ef31f4be6
+    :commit: cd8660c52db4286cdbb167f515b923214c8cdb60
     :git: "git@github.com:link-u/libdav1d-static.git"
 
 SPEC CHECKSUMS:
   libaom: 9bb51e0f8f9192245e3ca2a1c9e4375d9cbccc52
   libavif: b317b1c7c3a11c84068e0305e082e94c12e7cdf1
-  libdav1d: c475982c8c38023655f89bd2e228a765347cd760
+  libdav1d: 094dc003778d1abb26cf6a077fea154e8951e198
   libvmaf: 8d61aabc2f4ed3e6591cf7406fa00a223ec11289
-  Nuke: 6f400a4ea957e09149ec335a3c6acdcc814d89e4
-  Nuke-Avif-Plugin: edf2dd3f773892b213c47fe469f3023a9b47f718
-  RxCocoa: 4baf94bb35f2c0ab31bc0cb9f1900155f646ba42
-  RxRelay: e72dbfd157807478401ef1982e1c61c945c94b2f
-  RxSwift: d356ab7bee873611322f134c5f9ef379fa183d8f
+  Nuke: 279f17a599fd1c83cf51de5e0e1f2db143a287b0
+  Nuke-Avif-Plugin: 50b782778f52b5e07f95d956789492f44e742f67
+  RxCocoa: 94f817b71c07517321eb4f9ad299112ca8af743b
+  RxRelay: 1de1523e604c72b6c68feadedd1af3b1b4d0ecbd
+  RxSwift: 5710a9e6b17f3c3d6e40d6e559b9fa1e813b2ef8
 
 PODFILE CHECKSUM: 72ffcb32a0aeed1025797d7b13314fe84b09209e
 
-COCOAPODS: 1.10.1
+COCOAPODS: 1.11.2
