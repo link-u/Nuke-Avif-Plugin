@@ -5,7 +5,7 @@ use_modular_headers!
 target 'Nuke-Avif-Plugin_Example' do
   pod 'Nuke-Avif-Plugin', :path => '../'
   pod 'Nuke'
-  pod 'libavif/libdav1d-8bit', :podspec => 'https://raw.githubusercontent.com/link-u/libavif-Xcode/workaround/dav1d-static/libavif.podspec'
+  pod 'libavif', :podspec => 'https://raw.githubusercontent.com/link-u/libavif-Xcode/feature/defaultSubspec/libavif.podspec'
   pod 'libdav1d/8bit', :git => 'git@github.com:link-u/libdav1d-static.git'
 
   pod 'RxSwift'

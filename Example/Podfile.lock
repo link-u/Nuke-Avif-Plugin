@@ -1,19 +1,13 @@
 PODS:
-  - libaom (2.0.2):
-    - libvmaf
   - libavif (0.8.1):
-    - libavif/libaom (= 0.8.1)
+    - libavif/libdav1d-8bit (= 0.8.1)
   - libavif/core (0.8.1)
-  - libavif/libaom (0.8.1):
-    - libaom (>= 1.0.2)
-    - libavif/core
   - libavif/libdav1d-8bit (0.8.1):
     - libavif/core
     - libdav1d/8bit
-  - libdav1d/8bit (0.0.7)
-  - libvmaf (2.2.0)
+  - libdav1d/8bit (0.0.8)
   - Nuke (10.7.1)
-  - Nuke-Avif-Plugin (0.0.1):
+  - Nuke-Avif-Plugin (0.0.2):
     - libavif
     - Nuke (~> 10.0)
   - RxCocoa (6.5.0):
@@ -24,7 +18,7 @@ PODS:
   - RxSwift (6.5.0)
 
 DEPENDENCIES:
-  - libavif/libdav1d-8bit (from `https://raw.githubusercontent.com/link-u/libavif-Xcode/workaround/dav1d-static/libavif.podspec`)
+  - libavif (from `https://raw.githubusercontent.com/link-u/libavif-Xcode/feature/defaultSubspec/libavif.podspec`)
   - "libdav1d/8bit (from `git@github.com:link-u/libdav1d-static.git`)"
   - Nuke
   - Nuke-Avif-Plugin (from `../`)
@@ -33,8 +27,6 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
-    - libaom
-    - libvmaf
     - Nuke
     - RxCocoa
     - RxRelay
@@ -42,7 +34,7 @@ SPEC REPOS:
 
 EXTERNAL SOURCES:
   libavif:
-    :podspec: https://raw.githubusercontent.com/link-u/libavif-Xcode/workaround/dav1d-static/libavif.podspec
+    :podspec: https://raw.githubusercontent.com/link-u/libavif-Xcode/feature/defaultSubspec/libavif.podspec
   libdav1d:
     :git: "git@github.com:link-u/libdav1d-static.git"
   Nuke-Avif-Plugin:
@@ -50,20 +42,18 @@ EXTERNAL SOURCES:
 
 CHECKOUT OPTIONS:
   libdav1d:
-    :commit: cd8660c52db4286cdbb167f515b923214c8cdb60
+    :commit: 60ff13c924e29ae519d6ec7c23e978deec5d45f9
     :git: "git@github.com:link-u/libdav1d-static.git"
 
 SPEC CHECKSUMS:
-  libaom: 9bb51e0f8f9192245e3ca2a1c9e4375d9cbccc52
-  libavif: b317b1c7c3a11c84068e0305e082e94c12e7cdf1
-  libdav1d: 094dc003778d1abb26cf6a077fea154e8951e198
-  libvmaf: 8d61aabc2f4ed3e6591cf7406fa00a223ec11289
+  libavif: ba6bf04e07e24022de3cd594e898f4120ea7f088
+  libdav1d: 1397c733f983e40a3325065275318aba6a86da7c
   Nuke: 279f17a599fd1c83cf51de5e0e1f2db143a287b0
-  Nuke-Avif-Plugin: 50b782778f52b5e07f95d956789492f44e742f67
+  Nuke-Avif-Plugin: 656ca0f7d732ae81b05be4817bdf65efcb2a470f
   RxCocoa: 94f817b71c07517321eb4f9ad299112ca8af743b
   RxRelay: 1de1523e604c72b6c68feadedd1af3b1b4d0ecbd
   RxSwift: 5710a9e6b17f3c3d6e40d6e559b9fa1e813b2ef8
 
-PODFILE CHECKSUM: 72ffcb32a0aeed1025797d7b13314fe84b09209e
+PODFILE CHECKSUM: b7e8c736b6587843eed6e772715cf85b5664c68c
 
-COCOAPODS: 1.11.2
+COCOAPODS: 1.12.0
