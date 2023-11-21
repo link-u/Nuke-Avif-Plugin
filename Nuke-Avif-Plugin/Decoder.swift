@@ -9,6 +9,7 @@ import Foundation
 import Accelerate
 import Nuke
 import libavif
+import UIKit
 
 public extension ImageType {
     static var avif: ImageType {
