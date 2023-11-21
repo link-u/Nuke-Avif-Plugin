@@ -4,21 +4,21 @@ import PackageDescription
 let package = Package(
     name: "Nuke-Avif-Plugin",
     platforms: [
-        .iOS(.v14)
+        .iOS(.v11)
     ],
     products: [
         .library(name: "Nuke-Avif-Plugin", targets: ["Nuke-Avif-Plugin"]),
     ],
     dependencies: [
         .package(url: "https://github.com/kean/Nuke.git", from: "10.0.0"),
-        .package(url: "https://github.com/SDWebImage/libavif-Xcode.git", exact: "0.10.1"),
+        .package(url: "git@github.com:link-u/libavif-Xcode.git", .branch("workaround/dav1d-static"))
     ],
     targets: [
         .target(
             name: "Nuke-Avif-Plugin",
             dependencies: [
                 "Nuke",
-                "libavif"
+                .product(name: "libavif", package: "libavif-Xcode")
             ],
             path: "Nuke-Avif-Plugin"
         ),
