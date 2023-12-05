@@ -38,3 +38,5 @@ Carthage/Build
 #
 # Pods/
 Example/Pods
+
+/Package.resolved
