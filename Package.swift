@@ -10,7 +10,7 @@ let package = Package(
         .library(name: "Nuke-Avif-Plugin", targets: ["Nuke-Avif-Plugin"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/kean/Nuke.git", from: "10.0.0"),
+        .package(url: "https://github.com/kean/Nuke.git", from: "12.0.0"),
         .package(url: "git@github.com:link-u/libavif-Xcode.git", .branch("workaround/dav1d-static"))
     ],
     targets: [
