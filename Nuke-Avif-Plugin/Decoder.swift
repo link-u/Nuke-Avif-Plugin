@@ -11,38 +11,40 @@ import Nuke
 import libavif
 import UIKit
 
-public extension ImageType {
-    static var avif: ImageType {
-        return .init(rawValue: "avif")
-    }
+public enum AvifDecoderError: Error {
+    case unknownError
+    case underlyingError(Error)
 }
 
-public struct AvifImageDecoder: Nuke.ImageDecoding {
-    public func decode(_ data: Data) -> ImageContainer? {
+public extension AssetType {
+    static let avif: AssetType = "avif"
+}
+
+public struct AvifImageDecoder: ImageDecoding {
+    public func decode(_ data: Data) throws -> ImageContainer {
         var rawData = avifROData(data: data.withUnsafeBytes { $0.bindMemory(to: UInt8.self).baseAddress }, size: data.count)
         let decoder = avifDecoderCreate()
         defer { avifDecoderDestroy(decoder) }
         let decodeResult = avifDecoderParse(decoder, &rawData)
         guard decodeResult == AVIF_RESULT_OK else {
             print("Failed to decode image: \(String(describing: avifResultToString(decodeResult)))")
-            return nil
+            throw AvifDecoderError.unknownError
         }
         
         let nextImageResult = avifDecoderNextImage(decoder)
         guard nextImageResult == AVIF_RESULT_OK else {
             print("Failed to decode image: \(String(describing: avifResultToString(decodeResult)))")
-            return nil
+            throw AvifDecoderError.unknownError
         }
         
-        guard let decodedImage = decoder?.pointee.image else { return nil }
+        guard let decodedImage = decoder?.pointee.image else { throw AvifDecoderError.unknownError }
         //let imageRef = avifImageUsesU16(decodedImage) != 0 ? createCGImageU16(avif: decodedImage.pointee) : createCGImageU8(avif: decodedImage.pointee)
         do {
             let imageRef = try createCGImage8(avif: &decodedImage.pointee)
             let image = UIImage(cgImage: imageRef, scale: 1, orientation: .up)
             return .init(image: image, type: .avif, isPreview: false, data: data, userInfo: [:])
         } catch let e {
-            print(e.localizedDescription)
-            return nil
+            throw AvifDecoderError.underlyingError(e)
         }
     }
     

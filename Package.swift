@@ -2,22 +2,22 @@
 import PackageDescription
 
 let package = Package(
-    name: "Nuke-Avif-Plugin",
+    name: "NukeAvifPlugin",
     platforms: [
-        .iOS(.v11)
+        .iOS(.v14)
     ],
     products: [
-        .library(name: "Nuke-Avif-Plugin", targets: ["Nuke-Avif-Plugin"]),
+        .library(name: "NukeAvifPlugin", targets: ["NukeAvifPlugin"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/kean/Nuke.git", from: "12.0.0"),
-        .package(url: "git@github.com:link-u/libavif-Xcode.git", .branch("workaround/dav1d-static"))
+        .package(url: "https://github.com/kean/Nuke.git", "12.0.0"..<"13.0.0"), // 12系までをサポートする
+        .package(url: "git@github.com:link-u/libavif-Xcode.git", .branch("dav1d_static_0.1.1")) // タグで指定
     ],
     targets: [
         .target(
-            name: "Nuke-Avif-Plugin",
+            name: "NukeAvifPlugin",
             dependencies: [
-                "Nuke",
+                .product(name: "Nuke", package: "Nuke"),
                 .product(name: "libavif", package: "libavif-Xcode")
             ],
             path: "Nuke-Avif-Plugin"
