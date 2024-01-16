@@ -87,7 +87,7 @@ func converter8(
                                                          vImage_Flags(kvImageNoFlags)
                                                         ), errorMessage: "Failed to convert to ARGB8888.")
         
-        return (argbBuffer, disposable + [yuvBufferData.deallocate])
+        return (argbBuffer, disposable)
     }
     
     // yuv422: 色差は水平方向に2個一組
