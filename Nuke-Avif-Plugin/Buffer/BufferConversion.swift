@@ -137,7 +137,7 @@ func converter8(
             ypBufferData1.deallocate()
         }
         
-        var ypCrDiffBuffer = vImage_Buffer(data: ypCbDiffBufferData, height: yp.pointee.height, width: avif.vWidth / 2, rowBytes: Int(alignedWidth) / 2 * MemoryLayout<UInt8>.size)
+        var ypCrDiffBuffer = vImage_Buffer(data: ypCrDiffBufferData, height: yp.pointee.height, width: avif.vWidth / 2, rowBytes: Int(alignedWidth) / 2 * MemoryLayout<UInt8>.size)
         let ypCrDiffBufferArray = UnsafeMutablePointer<UnsafePointer<vImage_Buffer>?>.allocate(capacity: 1)
         ypCrDiffBufferArray.initialize(to: &ypCrDiffBuffer)
         defer {
