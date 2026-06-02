@@ -52,7 +52,7 @@ func extract8(avif: avifImage, chromaShift: (x: Int, y: Int), pixelRange: vImage
                 []
             )
         } else {
-            let dummyCrData = UnsafeMutableRawPointer.allocate(byteCount: cbcrWidth * MemoryLayout<Int>.size, alignment: 0)
+            let dummyCrData = UnsafeMutableRawPointer.allocate(byteCount: cbcrWidth * MemoryLayout<UInt8>.size, alignment: 0)
             dummyCrData.initializeMemory(as: UInt8.self, repeating: UInt8(pixelRange.CbCr_bias), count: cbcrWidth)
             return (
                 .init(data: dummyCrData,

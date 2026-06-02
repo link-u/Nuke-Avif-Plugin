@@ -7,7 +7,36 @@
 
 import CoreGraphics
 import Accelerate
+import Foundation
 import libavif
+
+private enum ColorSpaceCache {
+    private static let lock = NSLock()
+    private static var rgbColorSpaces: [CFString: CGColorSpace] = [:]
+    private static var monochromeColorSpaces: [String: CGColorSpace] = [:]
+
+    static func rgb(identifier: CFString, create: () -> CGColorSpace) -> CGColorSpace {
+        lock.lock()
+        defer { lock.unlock() }
+        if let cached = rgbColorSpaces[identifier] {
+            return cached
+        }
+        let colorSpace = create()
+        rgbColorSpaces[identifier] = colorSpace
+        return colorSpace
+    }
+
+    static func monochrome(identifier: String, create: () throws -> CGColorSpace) throws -> CGColorSpace {
+        lock.lock()
+        defer { lock.unlock() }
+        if let cached = monochromeColorSpaces[identifier] {
+            return cached
+        }
+        let colorSpace = try create()
+        monochromeColorSpaces[identifier] = colorSpace
+        return colorSpace
+    }
+}
 
 func calcRGBPrimaries(colorPrimaries: avifColorPrimaries) -> vImageRGBPrimaries {
     var primaries = [Float](repeating: 0, count: 8)
@@ -45,7 +74,6 @@ func createColorSpaceRGB(colorPrimaries: avifColorPrimaries, transferCharacteris
 }
 
 private let defaultColorSpaceRGB = CGColorSpaceCreateDeviceRGB()
-private var rgbColorSpaces = [CFString : CGColorSpace]()
 func calcColorSpaceRGB(avif: avifImage) throws -> CGColorSpace {
     if avif.icc.data != nil && avif.icc.size > 0 {
         guard let iccData = CFDataCreateWithBytesNoCopy(kCFAllocatorDefault, avif.icc.data, avif.icc.size, kCFAllocatorNull) else { throw ColorSpaceError(message: "cfdata creation failed.") }
@@ -54,20 +82,13 @@ func calcColorSpaceRGB(avif: avifImage) throws -> CGColorSpace {
     }
     
     func cachedColorSpace(identifier: CFString) -> CGColorSpace {
-        if let colorSpace = rgbColorSpaces[identifier] {
-            return colorSpace
-        } else {
-            let colorSpace = CGColorSpace(name: identifier)!
-            rgbColorSpaces[identifier] = colorSpace
-            return colorSpace
+        ColorSpaceCache.rgb(identifier: identifier) {
+            CGColorSpace(name: identifier)!
         }
     }
     
     switch (avif.colorPrimaries, avif.transferCharacteristics) {
-    case (AVIF_COLOR_PRIMARIES_UNKNOWN, AVIF_TRANSFER_CHARACTERISTICS_UNKNOWN),
-        (AVIF_COLOR_PRIMARIES_UNKNOWN, AVIF_TRANSFER_CHARACTERISTICS_UNKNOWN),
-        (AVIF_COLOR_PRIMARIES_UNKNOWN, AVIF_TRANSFER_CHARACTERISTICS_UNKNOWN),
-        (AVIF_COLOR_PRIMARIES_UNKNOWN, AVIF_TRANSFER_CHARACTERISTICS_UNKNOWN):
+    case (AVIF_COLOR_PRIMARIES_UNKNOWN, AVIF_TRANSFER_CHARACTERISTICS_UNKNOWN):
         return defaultColorSpaceRGB
         
     case (AVIF_COLOR_PRIMARIES_BT709, AVIF_TRANSFER_CHARACTERISTICS_BT709):
@@ -130,7 +151,6 @@ func createColorSpaceMonochrome(colorPrimaries: avifColorPrimaries, transferChar
 }
 
 private let defaultColorSpaceMonochrome = CGColorSpaceCreateDeviceGray()
-private var monochromeColorSpaces = [String : CGColorSpace]()
 func calcColorSpaceMonochrome(avif: avifImage) throws -> CGColorSpace {
     if avif.icc.data != nil && avif.icc.size > 0 {
         guard let iccData = CFDataCreateWithBytesNoCopy(kCFAllocatorDefault, avif.icc.data, avif.icc.size, kCFAllocatorNull) else { throw ColorSpaceError(message: "cfdata creation failed.") }
@@ -139,20 +159,16 @@ func calcColorSpaceMonochrome(avif: avifImage) throws -> CGColorSpace {
     }
     
     func cachedColorSpace(identifier: String) throws -> CGColorSpace {
-        if let colorSpace = monochromeColorSpaces[identifier] {
-            return colorSpace
-        } else {
-            let colorSpace = try createColorSpaceMonochrome(colorPrimaries: avif.colorPrimaries, transferCharacteristics: avif.transferCharacteristics)
-            monochromeColorSpaces[identifier] = colorSpace
-            return colorSpace
+        try ColorSpaceCache.monochrome(identifier: identifier) {
+            try createColorSpaceMonochrome(
+                colorPrimaries: avif.colorPrimaries,
+                transferCharacteristics: avif.transferCharacteristics
+            )
         }
     }
     
     switch (avif.colorPrimaries, avif.transferCharacteristics) {
-    case (AVIF_COLOR_PRIMARIES_UNKNOWN, AVIF_TRANSFER_CHARACTERISTICS_UNKNOWN),
-        (AVIF_COLOR_PRIMARIES_UNKNOWN, AVIF_TRANSFER_CHARACTERISTICS_UNKNOWN),
-        (AVIF_COLOR_PRIMARIES_UNKNOWN, AVIF_TRANSFER_CHARACTERISTICS_UNKNOWN),
-        (AVIF_COLOR_PRIMARIES_UNKNOWN, AVIF_TRANSFER_CHARACTERISTICS_UNKNOWN):
+    case (AVIF_COLOR_PRIMARIES_UNKNOWN, AVIF_TRANSFER_CHARACTERISTICS_UNKNOWN):
         return defaultColorSpaceMonochrome
         
     case (AVIF_COLOR_PRIMARIES_BT709, AVIF_TRANSFER_CHARACTERISTICS_BT709):
