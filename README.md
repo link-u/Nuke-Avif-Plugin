@@ -35,13 +35,20 @@ In Xcode: **File → Add Package Dependencies…** and enter the repository URL.
 
 ## Usage
 
-Register the decoder when configuring Nuke:
+Call `AvifImageDecoder.enable()` once at app launch (e.g. in `AppDelegate` or `@main` App init) before loading AVIF images:
 
 ```swift
-import Nuke
 import NukeAvifPlugin
 
-ImageDecoderRegistry.shared.register(AvifImageDecoder())
+AvifImageDecoder.enable()
+```
+
+After that, use Nuke as usual — AVIF URLs are decoded automatically via `ImageDecoderRegistry`.
+
+To decode AVIF data manually:
+
+```swift
+let container = try AvifImageDecoder().decode(data)
 ```
 
 ## License
