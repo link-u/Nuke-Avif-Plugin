@@ -1,32 +1,48 @@
 # Nuke-Avif-Plugin
 
-[![CI Status](https://img.shields.io/travis/murakami/Nuke-Avif-Plugin.svg?style=flat)](https://travis-ci.org/murakami/Nuke-Avif-Plugin)
-[![Version](https://img.shields.io/cocoapods/v/Nuke-Avif-Plugin.svg?style=flat)](https://cocoapods.org/pods/Nuke-Avif-Plugin)
-[![License](https://img.shields.io/cocoapods/l/Nuke-Avif-Plugin.svg?style=flat)](https://cocoapods.org/pods/Nuke-Avif-Plugin)
-[![Platform](https://img.shields.io/cocoapods/p/Nuke-Avif-Plugin.svg?style=flat)](https://cocoapods.org/pods/Nuke-Avif-Plugin)
+[![Swift Package Manager compatible](https://img.shields.io/badge/Swift%20Package%20Manager-compatible-brightgreen.svg)](https://github.com/apple/swift-package-manager)
 
-## Example
-
-```swift
-import NukeAvifPlugin
-
-AvifImageDecoder.enable()
-```
+Nuke plugin for decoding AVIF images.
 
 ## Requirements
 
+- iOS 15+
+- Xcode 16+ (Swift 6)
+- [Nuke](https://github.com/kean/Nuke) 13.x
+
 ## Installation
 
-Nuke-Avif-Plugin is available through [CocoaPods](https://cocoapods.org). To install
-it, simply add the following line to your Podfile:
+Add the package to your `Package.swift`:
 
-```ruby
-pod 'Nuke-Avif-Plugin'
+```swift
+dependencies: [
+    .package(url: "https://github.com/link-u/Nuke-Avif-Plugin.git", from: "1.0.0"),
+]
 ```
 
-## Author
+Then add `NukeAvifPlugin` to your target dependencies:
 
-murakami, zonaryfund@gmail.com
+```swift
+.target(
+    name: "YourTarget",
+    dependencies: [
+        .product(name: "NukeAvifPlugin", package: "Nuke-Avif-Plugin"),
+    ]
+)
+```
+
+In Xcode: **File → Add Package Dependencies…** and enter the repository URL.
+
+## Usage
+
+Register the decoder when configuring Nuke:
+
+```swift
+import Nuke
+import NukeAvifPlugin
+
+ImageDecoderRegistry.shared.register(AvifImageDecoder())
+```
 
 ## License
 
