@@ -65,7 +65,8 @@ public struct AvifImageDecoder: ImageDecoding {
 public extension AvifImageDecoder {
     static func enable() {
         Nuke.ImageDecoderRegistry.shared.register { context in
-            return context.data.isAvifData ? AvifImageDecoder() : nil
+            guard context.isCompleted, context.data.isAvifData else { return nil }
+            return AvifImageDecoder()
         }
     }
 }

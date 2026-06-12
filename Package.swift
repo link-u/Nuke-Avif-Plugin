@@ -1,17 +1,17 @@
-// swift-tools-version:5.7
+// swift-tools-version:6.0
 import PackageDescription
 
 let package = Package(
     name: "NukeAvifPlugin",
     platforms: [
-        .iOS(.v14)
+        .iOS(.v15)
     ],
     products: [
         .library(name: "NukeAvifPlugin", targets: ["NukeAvifPlugin"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/kean/Nuke.git", "12.0.0"..<"13.0.0"), // 12系までをサポートする
-        .package(url: "https://github.com/link-u/libavif-Xcode.git", .branch("dav1d_static_0.1.3")) // タグで指定
+        .package(url: "https://github.com/kean/Nuke.git", "13.0.0"..<"14.0.0"),
+        .package(url: "https://github.com/link-u/libavif-Xcode.git", .branch("dav1d_static_0.1.3"))
     ],
     targets: [
         .target(
@@ -21,6 +21,12 @@ let package = Package(
                 .product(name: "libavif", package: "libavif-Xcode")
             ],
             path: "Nuke-Avif-Plugin"
+        ),
+        .testTarget(
+            name: "NukeAvifPluginTests",
+            dependencies: ["NukeAvifPlugin", "Nuke"],
+            path: "Tests/NukeAvifPluginTests",
+            resources: [.process("Fixtures")]
         ),
     ]
 )
