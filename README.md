@@ -20,6 +20,8 @@ dependencies: [
 ]
 ```
 
+> **Note:** The formal `1.0.0` tag is not published yet. Until then, version resolution works with the pre-release tag `1.0.0-rc.2` (e.g. `exact: "1.0.0-rc.2"` or `from: "1.0.0-rc.2"`).
+
 Then add `NukeAvifPlugin` to your target dependencies:
 
 ```swift
