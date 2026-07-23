@@ -11,7 +11,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/kean/Nuke.git", "13.0.0"..<"14.0.0"),
-        .package(url: "https://github.com/link-u/libavif-Xcode.git", .branch("dav1d_static_0.1.3"))
+        .package(url: "https://github.com/link-u/libavif-Xcode.git", exact: "0.9.0-dav1d")
     ],
     targets: [
         .target(
