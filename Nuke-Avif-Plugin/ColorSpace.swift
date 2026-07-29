@@ -10,12 +10,14 @@ import Accelerate
 import Foundation
 import libavif
 
-private enum ColorSpaceCache {
-    private static let lock = NSLock()
-    private static var rgbColorSpaces: [CFString: CGColorSpace] = [:]
-    private static var monochromeColorSpaces: [String: CGColorSpace] = [:]
+private final class ColorSpaceCache: @unchecked Sendable {
+    static let shared = ColorSpaceCache()
 
-    static func rgb(identifier: CFString, create: () -> CGColorSpace) -> CGColorSpace {
+    private let lock = NSLock()
+    private var rgbColorSpaces: [CFString: CGColorSpace] = [:]
+    private var monochromeColorSpaces: [String: CGColorSpace] = [:]
+
+    func rgb(identifier: CFString, create: () -> CGColorSpace) -> CGColorSpace {
         lock.lock()
         defer { lock.unlock() }
         if let cached = rgbColorSpaces[identifier] {
@@ -26,7 +28,7 @@ private enum ColorSpaceCache {
         return colorSpace
     }
 
-    static func monochrome(identifier: String, create: () throws -> CGColorSpace) throws -> CGColorSpace {
+    func monochrome(identifier: String, create: () throws -> CGColorSpace) throws -> CGColorSpace {
         lock.lock()
         defer { lock.unlock() }
         if let cached = monochromeColorSpaces[identifier] {
@@ -82,7 +84,7 @@ func calcColorSpaceRGB(avif: avifImage) throws -> CGColorSpace {
     }
     
     func cachedColorSpace(identifier: CFString) -> CGColorSpace {
-        ColorSpaceCache.rgb(identifier: identifier) {
+        ColorSpaceCache.shared.rgb(identifier: identifier) {
             CGColorSpace(name: identifier)!
         }
     }
@@ -159,7 +161,7 @@ func calcColorSpaceMonochrome(avif: avifImage) throws -> CGColorSpace {
     }
     
     func cachedColorSpace(identifier: String) throws -> CGColorSpace {
-        try ColorSpaceCache.monochrome(identifier: identifier) {
+        try ColorSpaceCache.shared.monochrome(identifier: identifier) {
             try createColorSpaceMonochrome(
                 colorPrimaries: avif.colorPrimaries,
                 transferCharacteristics: avif.transferCharacteristics
