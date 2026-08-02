@@ -21,7 +21,9 @@ public extension AssetType {
 }
 
 public struct AvifImageDecoder: ImageDecoding {
-    /// When `true` (default), YUV400 / 8-bit / no-alpha AVIF is decoded as DeviceGray 8bpp.
+    /// When `true` (default), eligible YUV400 / 8-bit / no-alpha AVIF with
+    /// `transformFlags == AVIF_TRANSFORM_NONE` is decoded as an 8bpp monochrome `CGImage`
+    /// using a CICP-based color space (`createColorSpaceMonochrome`; DeviceGray on failure).
     /// Set to `false` to keep the legacy YUV→ARGB conversion path for those images.
     public static var yuv400DeviceGrayDecodingEnabled: Bool {
         get { yuv400DeviceGrayFlag.value }
