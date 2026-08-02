@@ -64,7 +64,8 @@ public struct AvifImageDecoder: ImageDecoding {
                 yuvFormat: avif.yuvFormat,
                 depth: avif.depth,
                 alphaPresent: alphaPresent,
-                alphaPlaneIsNull: avif.alphaPlane == nil
+                alphaPlaneIsNull: avif.alphaPlane == nil,
+                transformFlags: avif.transformFlags
             )
             if isEligibleForYUV400GrayscaleDecoding(eligibility) {
                 return try createDeviceGrayCGImage8(from: avif)

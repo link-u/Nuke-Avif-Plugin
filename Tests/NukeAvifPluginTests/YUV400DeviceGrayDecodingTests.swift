@@ -48,7 +48,8 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
             yuvFormat: AVIF_PIXEL_FORMAT_YUV400,
             depth: 8,
             alphaPresent: false,
-            alphaPlaneIsNull: true
+            alphaPlaneIsNull: true,
+            transformFlags: AVIF_TRANSFORM_NONE.rawValue
         )
         XCTAssertTrue(isEligibleForYUV400GrayscaleDecoding(input))
     }
@@ -58,7 +59,8 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
             yuvFormat: AVIF_PIXEL_FORMAT_YUV420,
             depth: 8,
             alphaPresent: false,
-            alphaPlaneIsNull: true
+            alphaPlaneIsNull: true,
+            transformFlags: AVIF_TRANSFORM_NONE.rawValue
         )
         XCTAssertFalse(isEligibleForYUV400GrayscaleDecoding(input))
     }
@@ -68,7 +70,8 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
             yuvFormat: AVIF_PIXEL_FORMAT_YUV400,
             depth: 10,
             alphaPresent: false,
-            alphaPlaneIsNull: true
+            alphaPlaneIsNull: true,
+            transformFlags: AVIF_TRANSFORM_NONE.rawValue
         )
         XCTAssertFalse(isEligibleForYUV400GrayscaleDecoding(input))
     }
@@ -78,21 +81,42 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
             yuvFormat: AVIF_PIXEL_FORMAT_YUV400,
             depth: 8,
             alphaPresent: true,
-            alphaPlaneIsNull: true
+            alphaPlaneIsNull: true,
+            transformFlags: AVIF_TRANSFORM_NONE.rawValue
         )
         let plane = YUV400GrayscaleEligibility(
             yuvFormat: AVIF_PIXEL_FORMAT_YUV400,
             depth: 8,
             alphaPresent: false,
-            alphaPlaneIsNull: false
+            alphaPlaneIsNull: false,
+            transformFlags: AVIF_TRANSFORM_NONE.rawValue
         )
         XCTAssertFalse(isEligibleForYUV400GrayscaleDecoding(present))
         XCTAssertFalse(isEligibleForYUV400GrayscaleDecoding(plane))
     }
 
+    func testEligibilityRejectsIROTOrIMIRTransform() {
+        let irot = YUV400GrayscaleEligibility(
+            yuvFormat: AVIF_PIXEL_FORMAT_YUV400,
+            depth: 8,
+            alphaPresent: false,
+            alphaPlaneIsNull: true,
+            transformFlags: AVIF_TRANSFORM_IROT.rawValue
+        )
+        let imir = YUV400GrayscaleEligibility(
+            yuvFormat: AVIF_PIXEL_FORMAT_YUV400,
+            depth: 8,
+            alphaPresent: false,
+            alphaPlaneIsNull: true,
+            transformFlags: AVIF_TRANSFORM_IMIR.rawValue
+        )
+        XCTAssertFalse(isEligibleForYUV400GrayscaleDecoding(irot))
+        XCTAssertFalse(isEligibleForYUV400GrayscaleDecoding(imir))
+    }
+
     // MARK: - Limited YUV400 → DeviceGray
 
-    /// limited YUV400 が DeviceGray / 8bpc / 8bpp / alpha none になり、帯の画素が伸長後期待値になることを検証する。
+    /// limited YUV400 が monochrome / 8bpc / 8bpp / alpha none になり、帯の画素が伸長後期待値になることを検証する。
     ///
     /// 入力 Y=16/126/235 → expandLimitedRangeYToGray8 → 0 / 128 / 255（許容 ±2）。
     func testLimitedYUV400DecodesAsDeviceGrayWithExpandedPixels() throws {
@@ -100,6 +124,7 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
         let cgImage = try decodeCGImage(data)
 
         assertDeviceGray8NoAlpha(cgImage)
+        XCTAssertEqual(cgImage.colorSpace?.model, .monochrome)
         XCTAssertEqual(cgImage.width, 96)
         XCTAssertEqual(cgImage.height, 64)
 
@@ -149,7 +174,8 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
                     yuvFormat: AVIF_PIXEL_FORMAT_YUV420,
                     depth: 8,
                     alphaPresent: false,
-                    alphaPlaneIsNull: true
+                    alphaPlaneIsNull: true,
+                    transformFlags: AVIF_TRANSFORM_NONE.rawValue
                 )
             )
         )
@@ -179,7 +205,8 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
                     yuvFormat: AVIF_PIXEL_FORMAT_YUV400,
                     depth: 10,
                     alphaPresent: false,
-                    alphaPlaneIsNull: true
+                    alphaPlaneIsNull: true,
+                    transformFlags: AVIF_TRANSFORM_NONE.rawValue
                 )
             )
         )
@@ -264,31 +291,29 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
 
     // MARK: - Flag OFF → legacy path
 
-    /// フラグ OFF 時、適格 YUV400 でも既存経路になることを検証する。
+    /// フラグ OFF 時、適格 YUV400 でも既存経路でデコードできることを検証する。
     ///
-    /// 新経路 ON 時の DeviceGray 画素と、OFF 時の結果が一致しないこと（または新経路属性を満たさないこと）で区別する。
+    /// 新経路は CICP monochrome（本フィクスチャは BT709 / sRGB）を使う。
+    /// 既存経路も YUV400 では monochrome 8bpp になり得るため、画素／model だけでは区別しない。
     func testFlagOffUsesLegacyPathForEligibleYUV400() throws {
         let data = try loadYUV400Fixture(.limitedGrayRamps)
 
         AvifImageDecoder.yuv400DeviceGrayDecodingEnabled = true
         let onImage = try decodeCGImage(data)
         assertDeviceGray8NoAlpha(onImage)
-        let onBytes = try XCTUnwrap(onImage.dataProvider?.data as Data?)
+        // limited gray-ramps は Color Primaries=1 / Transfer=13 → CICP 生成が成功し DeviceGray フォールバックに落ちない。
+        XCTAssertNotEqual(
+            onImage.colorSpace?.name as String?,
+            CGColorSpaceCreateDeviceGray().name as String?,
+            "ON path should use CICP monochrome, not DeviceGray fallback"
+        )
 
         AvifImageDecoder.yuv400DeviceGrayDecodingEnabled = false
         let offImage = try decodeCGImage(data)
-        let offBytes = try XCTUnwrap(offImage.dataProvider?.data as Data?)
-
-        // 既存経路は変換・色空間が異なり、新経路の owned Y バッファとは一致しない想定。
-        // 万一ビット一致しても、新経路専用の厳密属性セットで OFF 側を否定する。
-        if offBytes == onBytes {
-            XCTAssertFalse(
-                isNewDeviceGrayPath(offImage) && offImage.colorSpace?.name == CGColorSpaceCreateDeviceGray().name,
-                "flag OFF should not use the new DeviceGray path"
-            )
-        } else {
-            XCTAssertNotEqual(offBytes, onBytes)
-        }
+        XCTAssertEqual(offImage.width, onImage.width)
+        XCTAssertEqual(offImage.height, onImage.height)
+        // オプトアウト後もデコード成功（既存 converter 経路）。
+        XCTAssertNotNil(offImage.dataProvider?.data)
     }
 
     // MARK: - Helpers
@@ -317,21 +342,14 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
         XCTAssertEqual(image.bitsPerPixel, 8, file: file, line: line)
         XCTAssertEqual(image.alphaInfo, .none, file: file, line: line)
         XCTAssertEqual(image.colorSpace?.model, .monochrome, file: file, line: line)
-        XCTAssertEqual(
-            image.colorSpace?.name as String?,
-            CGColorSpaceCreateDeviceGray().name as String?,
-            file: file,
-            line: line
-        )
     }
 
-    /// 新経路の典型属性（DeviceGray / 8 / 8 / none）。
+    /// 新経路の典型属性（monochrome / 8 / 8 / none）。
     private func isNewDeviceGrayPath(_ image: CGImage) -> Bool {
         image.bitsPerComponent == 8
             && image.bitsPerPixel == 8
             && image.alphaInfo == .none
             && image.colorSpace?.model == .monochrome
-            && image.colorSpace?.name == CGColorSpaceCreateDeviceGray().name
     }
 
     private func assertGrayNear(

@@ -55,7 +55,18 @@ let container = try AvifImageDecoder().decode(data)
 
 ### YUV400 DeviceGray decoding (1.1.0)
 
-From 1.1.0, YUV400 / 8-bit / no-alpha AVIF is decoded as a DeviceGray 8bpp `CGImage` by default (instead of the legacy YUV→ARGB path).
+From 1.1.0, eligible YUV400 AVIF is decoded on a dedicated monochrome 8bpp `CGImage` path by default (instead of the legacy YUV→ARGB path).
+
+**New-path conditions** (all must hold):
+
+- `yuvFormat == YUV400`
+- `depth == 8`
+- no alpha (`alphaPresent == false` and `alphaPlane == NULL`)
+- `transformFlags == AVIF_TRANSFORM_NONE` (no irot / imir / clap / pasp)
+
+**Color space:** CICP-based monochrome via `createColorSpaceMonochrome(colorPrimaries:transferCharacteristics:)`. If that creation throws, the path falls back to `CGColorSpaceCreateDeviceGray()` so decode still succeeds (no ColorSpaceCache).
+
+**Default:** `AvifImageDecoder.yuv400DeviceGrayDecodingEnabled` is **ON**. Apps that depend on the previous YUV→ARGB bitmap layout / color space (e.g. Glenwood, GanGanOnline, JumpPlus when they load eligible YUV400) will see a behavior change: 8bpp monochrome `CGImage` instead of converted RGB(A).
 
 To opt out and keep the previous conversion path:
 

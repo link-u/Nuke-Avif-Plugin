@@ -15,15 +15,17 @@ struct YUV400GrayscaleEligibility {
     let depth: UInt32
     let alphaPresent: Bool
     let alphaPlaneIsNull: Bool
+    let transformFlags: UInt32
 }
 
-/// Returns true only when all four conditions hold:
-/// YUV400, 8-bit depth, alphaPresent == false, alphaPlane == NULL.
+/// Returns true only when all conditions hold:
+/// YUV400, 8-bit depth, alphaPresent == false, alphaPlane == NULL, no transforms.
 func isEligibleForYUV400GrayscaleDecoding(_ input: YUV400GrayscaleEligibility) -> Bool {
     input.yuvFormat == AVIF_PIXEL_FORMAT_YUV400
         && input.depth == 8
         && input.alphaPresent == false
         && input.alphaPlaneIsNull
+        && input.transformFlags == AVIF_TRANSFORM_NONE.rawValue
 }
 
 /// Limited-range Y (studio swing) → full-range 8-bit gray.
@@ -40,7 +42,8 @@ enum YUV400GrayscaleError: Error {
 }
 
 /// Copies the Y plane into an owned contiguous buffer (width bytes per row),
-/// applying limited-range expansion when needed, then builds a DeviceGray CGImage.
+/// applying limited-range expansion when needed, then builds a monochrome CGImage.
+/// Color space uses CICP (`createColorSpaceMonochrome`); on failure falls back to DeviceGray.
 func createDeviceGrayCGImage8(from avif: avifImage) throws -> CGImage {
     guard let yPlane = avif.yuvPlanes.0 else {
         throw YUV400GrayscaleError.missingYPlane
@@ -53,7 +56,6 @@ func createDeviceGrayCGImage8(from avif: avifImage) throws -> CGImage {
 
     let byteCount = width * height
     let owned = UnsafeMutablePointer<UInt8>.allocate(capacity: byteCount)
-    owned.initialize(repeating: 0, count: byteCount)
 
     for row in 0..<height {
         let src = yPlane.advanced(by: row * yRowBytes)
@@ -75,13 +77,23 @@ func createDeviceGrayCGImage8(from avif: avifImage) throws -> CGImage {
         throw YUV400GrayscaleError.dataProviderCreationFailed
     }
 
+    let colorSpace: CGColorSpace
+    do {
+        colorSpace = try createColorSpaceMonochrome(
+            colorPrimaries: avif.colorPrimaries,
+            transferCharacteristics: avif.transferCharacteristics
+        )
+    } catch {
+        colorSpace = CGColorSpaceCreateDeviceGray()
+    }
+
     guard let image = CGImage(
         width: width,
         height: height,
         bitsPerComponent: 8,
         bitsPerPixel: 8,
         bytesPerRow: width,
-        space: CGColorSpaceCreateDeviceGray(),
+        space: colorSpace,
         bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue),
         provider: provider,
         decode: nil,
