@@ -24,7 +24,11 @@ let package = Package(
         ),
         .testTarget(
             name: "NukeAvifPluginTests",
-            dependencies: ["NukeAvifPlugin", "Nuke"],
+            dependencies: [
+                "NukeAvifPlugin",
+                "Nuke",
+                .product(name: "libavif", package: "libavif-Xcode"),
+            ],
             path: "Tests/NukeAvifPluginTests",
             resources: [.process("Fixtures")]
         ),
