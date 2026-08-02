@@ -53,6 +53,16 @@ To decode AVIF data manually:
 let container = try AvifImageDecoder().decode(data)
 ```
 
+### YUV400 DeviceGray decoding (1.1.0)
+
+From 1.1.0, YUV400 / 8-bit / no-alpha AVIF is decoded as a DeviceGray 8bpp `CGImage` by default (instead of the legacy YUV→ARGB path).
+
+To opt out and keep the previous conversion path:
+
+```swift
+AvifImageDecoder.yuv400DeviceGrayDecodingEnabled = false
+```
+
 ## License
 
 Nuke-Avif-Plugin is available under the MIT license. See the LICENSE file for more info.
