@@ -196,9 +196,12 @@ func converter8(
 
         do {
             try limitedRangeToFull8Table.withUnsafeBufferPointer { table in
+                guard let tablePointer = table.baseAddress else {
+                    throw ConversionError(message: "Limited-range LUT pointer was nil.", vImageError: kvImageNullPointerArgument)
+                }
                 try vImageTry(vImageTableLookUp_Planar8(&srcAlphaBuffer,
                                                         &alphaBuffer,
-                                                        table.baseAddress,
+                                                        tablePointer,
                                                         vImage_Flags(kvImageNoFlags)
                                                        ), errorMessage: "Failed to expand limited-range alpha plane.")
             }

@@ -79,7 +79,10 @@ func createDeviceGrayCGImage8(from avif: avifImage) throws -> CGImage {
     let conversionError: vImage_Error
     if isLimited {
         conversionError = limitedRangeToFull8Table.withUnsafeBufferPointer { table in
-            vImageTableLookUp_Planar8(&srcBuffer, &dstBuffer, table.baseAddress, vImage_Flags(kvImageNoFlags))
+            guard let tablePointer = table.baseAddress else {
+                return kvImageNullPointerArgument
+            }
+            return vImageTableLookUp_Planar8(&srcBuffer, &dstBuffer, tablePointer, vImage_Flags(kvImageNoFlags))
         }
     } else {
         conversionError = vImageCopyBuffer(&srcBuffer, &dstBuffer, MemoryLayout<UInt8>.size, vImage_Flags(kvImageNoFlags))
