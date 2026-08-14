@@ -5,6 +5,7 @@
 //  YUV400 / 8bit / no-alpha → DeviceGray 8bpp CGImage path.
 //
 
+import Accelerate
 import CoreGraphics
 import Foundation
 import libavif
@@ -35,14 +36,23 @@ func expandLimitedRangeYToGray8(_ y: UInt8) -> UInt8 {
     return UInt8(min(255, max(0, v)))
 }
 
+/// 256-entry LUT for limited-range (studio swing) → full-range 8-bit expansion.
+/// Built from `expandLimitedRangeYToGray8` so the vImage path matches the scalar
+/// reference bit-exactly. Also shared with the limited-range alpha-plane
+/// expansion in `BufferConversion.swift`.
+let limitedRangeToFull8Table: [UInt8] = (UInt8.min...UInt8.max).map(expandLimitedRangeYToGray8)
+
 enum YUV400GrayscaleError: Error {
     case missingYPlane
+    case conversionFailed(vImage_Error)
     case dataProviderCreationFailed
     case cgImageCreationFailed
 }
 
 /// Copies the Y plane into an owned contiguous buffer (width bytes per row),
 /// applying limited-range expansion when needed, then builds a monochrome CGImage.
+/// The copy/expansion runs as a single vImage pass (256-entry LUT for limited
+/// range, plain buffer copy for full range) instead of a scalar per-pixel loop.
 /// Color space uses CICP (`createColorSpaceMonochrome`); on failure falls back to DeviceGray.
 func createDeviceGrayCGImage8(from avif: avifImage) throws -> CGImage {
     guard let yPlane = avif.yuvPlanes.0 else {
@@ -57,16 +67,26 @@ func createDeviceGrayCGImage8(from avif: avifImage) throws -> CGImage {
     let byteCount = width * height
     let owned = UnsafeMutablePointer<UInt8>.allocate(capacity: byteCount)
 
-    for row in 0..<height {
-        let src = yPlane.advanced(by: row * yRowBytes)
-        let dst = owned.advanced(by: row * width)
-        if isLimited {
-            for x in 0..<width {
-                dst[x] = expandLimitedRangeYToGray8(src[x])
-            }
-        } else {
-            dst.update(from: src, count: width)
+    var srcBuffer = vImage_Buffer(data: UnsafeMutableRawPointer(yPlane),
+                                  height: vImagePixelCount(height),
+                                  width: vImagePixelCount(width),
+                                  rowBytes: yRowBytes)
+    var dstBuffer = vImage_Buffer(data: UnsafeMutableRawPointer(owned),
+                                  height: vImagePixelCount(height),
+                                  width: vImagePixelCount(width),
+                                  rowBytes: width)
+
+    let conversionError: vImage_Error
+    if isLimited {
+        conversionError = limitedRangeToFull8Table.withUnsafeBufferPointer { table in
+            vImageTableLookUp_Planar8(&srcBuffer, &dstBuffer, table.baseAddress, vImage_Flags(kvImageNoFlags))
         }
+    } else {
+        conversionError = vImageCopyBuffer(&srcBuffer, &dstBuffer, MemoryLayout<UInt8>.size, vImage_Flags(kvImageNoFlags))
+    }
+    guard conversionError == kvImageNoError else {
+        owned.deallocate()
+        throw YUV400GrayscaleError.conversionFailed(conversionError)
     }
 
     let data = Data(bytesNoCopy: owned, count: byteCount, deallocator: .custom { pointer, _ in
