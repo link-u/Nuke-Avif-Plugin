@@ -13,16 +13,15 @@ func converter8(
     avif: avifImage,
     yp: UnsafePointer<vImage_Buffer>, cb: UnsafePointer<vImage_Buffer>, cr: UnsafePointer<vImage_Buffer>,
     characteristics: Characteristics
-) throws -> vImage_Buffer {    
-    let usePseudoARGBBuffer = characteristics.monochrome || !characteristics.hasAlpha
-    
+) throws -> vImage_Buffer {
     func argbBuffer() -> ImageBufferWithDisposables {
-        let byteCount = usePseudoARGBBuffer ?
-        avif.iWidth * avif.iHeight * 4 * MemoryLayout<UInt8>.size :
-        characteristics.componentsPerPixel * characteristics.bytesPerRow * avif.iHeight * MemoryLayout<UInt8>.size
+        // ARGB8888 working buffer (4 bytes per pixel, rowBytes = width * 4).
+        // The subsequent vImage YpCbCr → ARGB conversion overwrites every pixel
+        // (alpha is filled with the constant 255), so the buffer is intentionally
+        // left uninitialized to avoid a redundant full-size memset pass.
+        let byteCount = avif.iWidth * avif.iHeight * 4 * MemoryLayout<UInt8>.size
         
         let data = UnsafeMutableRawPointer.allocate(byteCount: byteCount, alignment: MemoryLayout<UInt8>.alignment)
-        data.initializeMemory(as: UInt8.self, repeating: 0, count: byteCount)
         
         let buffer = vImage_Buffer(data: data, height: avif.vHeight, width: avif.vWidth, rowBytes: avif.iWidth * 4)
         return (buffer, [data.deallocate])
@@ -188,35 +187,27 @@ func converter8(
         guard characteristics.alphaRange == AVIF_RANGE_LIMITED else {
             return (srcAlphaBuffer, [])
         }
-            
-        let floatAlphaBufferData = UnsafeMutableRawPointer.allocate(byteCount: avif.iWidth * avif.iHeight * MemoryLayout<Float>.size, alignment: MemoryLayout<Float>.alignment)
-        defer {
-            floatAlphaBufferData.deallocate()
-        }
-    
-        var floatAlphaBuffer = vImage_Buffer(data: floatAlphaBufferData, height: avif.vHeight, width: avif.vWidth, rowBytes: avif.iWidth * MemoryLayout<Float>.size)
-        try vImageTry(vImageConvert_Planar8toPlanarF(&srcAlphaBuffer,
-                                                 &floatAlphaBuffer,
-                                                 255,
-                                                 0,
-                                                 vImage_Flags(kvImageNoFlags)
-                                                ), errorMessage: "Failed to convert alpha planes from uint8 to float.")
-        
-        
-        let scaledAlphaBufferData = UnsafeMutableRawPointer.allocate(byteCount: avif.iWidth * avif.iHeight * MemoryLayout<UInt8>.size, alignment: MemoryLayout<UInt8>.alignment)
-        var alphaBuffer = vImage_Buffer(data: scaledAlphaBufferData, height: avif.vHeight, width: avif.vWidth, rowBytes: avif.iWidth * MemoryLayout<UInt8>.size)
-        
+
+        // Limited → full range expansion in a single pass with a 256-entry LUT.
+        // (Replaces the previous two-pass Planar8 → PlanarF → Planar8 conversion
+        // and its W×H×4-byte float intermediate buffer.)
+        let expandedAlphaBufferData = UnsafeMutableRawPointer.allocate(byteCount: avif.iWidth * avif.iHeight * MemoryLayout<UInt8>.size, alignment: MemoryLayout<UInt8>.alignment)
+        var alphaBuffer = vImage_Buffer(data: expandedAlphaBufferData, height: avif.vHeight, width: avif.vWidth, rowBytes: avif.iWidth * MemoryLayout<UInt8>.size)
+
         do {
-            try vImageTry(vImageConvert_PlanarFtoPlanar8(&floatAlphaBuffer,
-                                                     &alphaBuffer,
-                                                     235,
-                                                     16,
-                                                     vImage_Flags(kvImageNoFlags)
-                                                    ), errorMessage: "Failed to convert alpha planes from float to uint8.")
-            
-            return (alphaBuffer, [scaledAlphaBufferData.deallocate])
+            try limitedRangeToFull8Table.withUnsafeBufferPointer { table in
+                guard let tablePointer = table.baseAddress else {
+                    throw ConversionError(message: "Limited-range LUT pointer was nil.", vImageError: kvImageNullPointerArgument)
+                }
+                try vImageTry(vImageTableLookUp_Planar8(&srcAlphaBuffer,
+                                                        &alphaBuffer,
+                                                        tablePointer,
+                                                        vImage_Flags(kvImageNoFlags)
+                                                       ), errorMessage: "Failed to expand limited-range alpha plane.")
+            }
+            return (alphaBuffer, [expandedAlphaBufferData.deallocate])
         } catch let e {
-            scaledAlphaBufferData.deallocate()
+            expandedAlphaBufferData.deallocate()
             throw e
         }
     }
@@ -293,18 +284,10 @@ func converter8(
                                                           ), errorMessage: "Failed to overwrite alpha.")
             return argbBuffer
         } else {
-            let rgbBufferData = UnsafeMutableRawPointer.allocate(byteCount: characteristics.componentsPerPixel * characteristics.bytesPerRow * avif.iHeight * MemoryLayout<UInt8>.size, alignment: MemoryLayout<UInt8>.alignment)
-            var rgbBuffer = vImage_Buffer(data: rgbBufferData, height: avif.vHeight, width: avif.vWidth, rowBytes: avif.iWidth * characteristics.componentsPerPixel)
-            do {
-                try vImageTry(vImageConvert_ARGB8888toRGB888(&argbBuffer,
-                                                             &rgbBuffer,
-                                                             vImage_Flags(kvImageNoFlags)
-                                                            ), errorMessage: "Failed to convert ARGB to RGB.")
-                return rgbBuffer
-            } catch let e {
-                rgbBufferData.deallocate()
-                throw e
-            }
+            // No alpha: keep the ARGB8888 buffer as-is; CGImage creation marks the
+            // leading byte as skipped (.noneSkipFirst). This removes a full
+            // ARGB8888 → RGB888 conversion pass and a separate W×H×3 buffer.
+            return argbBuffer
         }
     }
     
@@ -323,7 +306,10 @@ func converter8(
         }
     }()
     defer {
-        if characteristics.monochrome || !characteristics.hasAlpha {
+        // Color images (with or without alpha) now return the ARGB buffer itself
+        // as the final result, so it may only be disposed on the monochrome path,
+        // which copies its pixels out into a separate result buffer.
+        if characteristics.monochrome {
             argbBuffer.disposers.forEach { $0() }
         }
     }
