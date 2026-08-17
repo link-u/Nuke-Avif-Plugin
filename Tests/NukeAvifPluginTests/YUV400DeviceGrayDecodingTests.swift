@@ -43,6 +43,7 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
 
     // MARK: - Eligibility (pure)
 
+    /// YUV400 / 8bit / アルファなし / transform なしだけが DeviceGray 経路の対象になることを検証する。
     func testEligibilityAcceptsYUV400EightBitNoAlpha() {
         let input = YUV400GrayscaleEligibility(
             yuvFormat: AVIF_PIXEL_FORMAT_YUV400,
@@ -54,6 +55,7 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
         XCTAssertTrue(isEligibleForYUV400GrayscaleDecoding(input))
     }
 
+    /// YUV420（見た目グレーでも chroma あり）は DeviceGray 経路に入らないことを検証する。
     func testEligibilityRejectsYUV420VisualMono() {
         let input = YUV400GrayscaleEligibility(
             yuvFormat: AVIF_PIXEL_FORMAT_YUV420,
@@ -65,6 +67,7 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
         XCTAssertFalse(isEligibleForYUV400GrayscaleDecoding(input))
     }
 
+    /// 10bit YUV400 は DeviceGray 8bpp 経路の対象外であることを検証する。
     func testEligibilityRejectsTenBit() {
         let input = YUV400GrayscaleEligibility(
             yuvFormat: AVIF_PIXEL_FORMAT_YUV400,
@@ -76,6 +79,7 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
         XCTAssertFalse(isEligibleForYUV400GrayscaleDecoding(input))
     }
 
+    /// alphaPresent または alphaPlane がある YUV400 は DeviceGray 経路の対象外であることを検証する。
     func testEligibilityRejectsAlphaPresent() {
         let present = YUV400GrayscaleEligibility(
             yuvFormat: AVIF_PIXEL_FORMAT_YUV400,
@@ -95,6 +99,7 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
         XCTAssertFalse(isEligibleForYUV400GrayscaleDecoding(plane))
     }
 
+    /// irot / imir 付き YUV400 は transform があるため DeviceGray 経路の対象外であることを検証する。
     func testEligibilityRejectsIROTOrIMIRTransform() {
         let irot = YUV400GrayscaleEligibility(
             yuvFormat: AVIF_PIXEL_FORMAT_YUV400,
@@ -215,7 +220,9 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
         assertFlagOnOffEquivalent(data)
     }
 
-    /// alpha 付き YUV400 は新経路に入らないことを検証する。
+    /// alpha 付き YUV400 は新経路に入らず、16bpp（A + Gray）・`.first` になることを検証する。
+    ///
+    /// DeviceGray 8bpp はアルファを持てないため、既存の monochromeCombine 経路へ落ちる。
     func testAlphaYUV400DoesNotTakeDeviceGrayPath() throws {
         let data = try loadYUV400Fixture(.alphaFallback)
 
@@ -228,6 +235,37 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
         // Alpha 経路は alpha 付きビットマップになる（新経路の alpha none / 8bpp ではない）。
         XCTAssertNotEqual(onImage.alphaInfo, .none)
         XCTAssertFalse(isNewDeviceGrayPath(onImage))
+    }
+
+    /// アルファ付き YUV400 が 8bit 成分 × 2（`.first`）でデコードされ、アルファ帯が残ることを検証する。
+    ///
+    /// フィクスチャは A=255 / 128 / 0 の帯。limited 伸長後も不透明・半透明・透明が混在する。
+    /// カラー+アルファの本番フィクスチャは未同梱のため、透過の画素確認はこのファイルで行う。
+    func testAlphaYUV400DecodesSixteenBitAlphaFirstLayoutWithVaryingAlpha() throws {
+        let data = try loadYUV400Fixture(.alphaFallback)
+        let image = try decodeCGImage(data)
+
+        XCTAssertEqual(image.width, 64)
+        XCTAssertEqual(image.height, 32)
+        XCTAssertEqual(image.bitsPerComponent, 8)
+        XCTAssertEqual(image.bitsPerPixel, 16)
+        XCTAssertEqual(image.alphaInfo, .first)
+        XCTAssertEqual(image.colorSpace?.model, .monochrome)
+        XCTAssertFalse(isNewDeviceGrayPath(image))
+
+        var alphas: [UInt8] = []
+        let stepX = max(1, image.width / 8)
+        let stepY = max(1, image.height / 4)
+        for y in stride(from: 0, to: image.height, by: stepY) {
+            for x in stride(from: 0, to: image.width, by: stepX) {
+                alphas.append(alphaGrayPixel(image, x: x, y: y).alpha)
+            }
+        }
+
+        let uniqueAlphas = Set(alphas)
+        XCTAssertGreaterThanOrEqual(uniqueAlphas.count, 2, "alpha plane should not be opaque-only: \(uniqueAlphas)")
+        XCTAssertGreaterThanOrEqual(alphas.max() ?? 0, 200, "expected a near-opaque alpha band")
+        XCTAssertLessThanOrEqual(alphas.min() ?? 255, 30, "expected a near-transparent alpha band")
     }
 
     // MARK: - Odd width
@@ -380,6 +418,19 @@ final class YUV400DeviceGrayDecodingTests: XCTestCase {
         }
         let ptr = CFDataGetBytePtr(data)!
         return ptr[y * image.bytesPerRow + x]
+    }
+
+    /// 16bpp `.first`（[A, Gray]）から 1 画素のアルファと輝度を読む。
+    private func alphaGrayPixel(_ image: CGImage, x: Int, y: Int) -> (alpha: UInt8, gray: UInt8) {
+        XCTAssertEqual(image.bitsPerPixel, 16)
+        XCTAssertEqual(image.alphaInfo, .first)
+        guard let data = image.dataProvider?.data else {
+            XCTFail("missing data provider")
+            return (0, 0)
+        }
+        let pointer = CFDataGetBytePtr(data)!
+        let offset = y * image.bytesPerRow + x * 2
+        return (pointer[offset], pointer[offset + 1])
     }
 
     private func imageFingerprint(_ image: CGImage) throws -> Data {

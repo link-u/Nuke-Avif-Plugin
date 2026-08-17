@@ -1,5 +1,6 @@
-import XCTest
+import CoreGraphics
 import Nuke
+import XCTest
 @testable import NukeAvifPlugin
 
 /// AvifImageDecoder および ImageDecoderRegistry 連携の回帰テスト。
@@ -18,6 +19,11 @@ final class AvifImageDecoderTests: XCTestCase {
         case avifencYUV420 = "test_avifenc_yuv420"
         case avifencYUV422 = "test_avifenc_yuv422"
         case avifencYUV444 = "test_avifenc_yuv444"
+
+        /// アルファなしカラー（YUV420/422/444）。gray はモノクロ経路のため除外。
+        static var colorNoAlpha: [ProductionFixture] {
+            [.cavifYUV420, .cavifYUV422, .cavifYUV444, .avifencYUV420, .avifencYUV422, .avifencYUV444]
+        }
     }
 
     private static let foxFixtureName = "fox.profile0.8bpc.yuv420.monochrome.odd-width.odd-height"
@@ -172,5 +178,77 @@ final class AvifImageDecoderTests: XCTestCase {
         XCTAssertFalse(container.isPreview)
         XCTAssertGreaterThan(container.image.size.width, 0)
         XCTAssertGreaterThan(container.image.size.height, 0)
+    }
+
+    // MARK: - Color decode (no alpha)
+
+    /// アルファなしカラー 6 種が RGB 色空間の 32bpp XRGB（`.noneSkipFirst`）になることを検証する。
+    ///
+    /// 現行コンバータは ARGB8888 を RGB888 に切り出さず、先頭バイトをスキップして渡す。
+    /// gray フィクスチャは DeviceGray 経路のため対象外。
+    func testColorFixturesDecodeAsThirtyTwoBitXRGBWithoutAlpha() throws {
+        for fixture in ProductionFixture.colorNoAlpha {
+            let image = try decodeCGImage(named: fixture.rawValue)
+            XCTAssertEqual(image.bitsPerComponent, 8, fixture.rawValue)
+            XCTAssertEqual(image.bitsPerPixel, 32, fixture.rawValue)
+            XCTAssertEqual(image.alphaInfo, .noneSkipFirst, fixture.rawValue)
+            XCTAssertEqual(image.colorSpace?.model, .rgb, fixture.rawValue)
+            XCTAssertGreaterThan(image.width, 0, fixture.rawValue)
+            XCTAssertGreaterThan(image.height, 0, fixture.rawValue)
+        }
+    }
+
+    /// アルファなしカラー 6 種の dataProvider が XRGB（[X,R,G,B]）として読め、単色塗りではないことを検証する。
+    ///
+    /// 四隅と中央をサンプリングし、全点が同一 RGB ならデコード失敗（白飛び・黒潰れ）とみなす。
+    func testColorFixturesHaveReadableRGBPixelsAndAreNotFlat() throws {
+        for fixture in ProductionFixture.colorNoAlpha {
+            let image = try decodeCGImage(named: fixture.rawValue)
+            let samples = sampleCornerAndCenterRGB(image)
+            XCTAssertEqual(samples.count, 5, fixture.rawValue)
+            let unique = Set(samples.map { "\($0.r),\($0.g),\($0.b)" })
+            XCTAssertGreaterThan(
+                unique.count,
+                1,
+                "\(fixture.rawValue) decoded as a flat fill \(samples[0])"
+            )
+        }
+    }
+
+    // MARK: - Helpers
+
+    /// フィクスチャ名から decode し、UIImage 配下の CGImage を取り出す。
+    private func decodeCGImage(named resourceName: String) throws -> CGImage {
+        let data = try loadFixture(named: resourceName)
+        let container = try AvifImageDecoder().decode(data)
+        return try XCTUnwrap(container.image.cgImage)
+    }
+
+    /// 32bpp `.noneSkipFirst` バッファから 1 画素の RGB を読む（先頭バイトは無視）。
+    private func rgbPixel(_ image: CGImage, x: Int, y: Int) -> (r: UInt8, g: UInt8, b: UInt8) {
+        XCTAssertEqual(image.bitsPerPixel, 32)
+        XCTAssertEqual(image.alphaInfo, .noneSkipFirst)
+        guard let data = image.dataProvider?.data else {
+            XCTFail("missing data provider")
+            return (0, 0, 0)
+        }
+        let pointer = CFDataGetBytePtr(data)!
+        let offset = y * image.bytesPerRow + x * 4
+        return (pointer[offset + 1], pointer[offset + 2], pointer[offset + 3])
+    }
+
+    /// 四隅と中央の 5 点を XRGB として読む。
+    private func sampleCornerAndCenterRGB(_ image: CGImage) -> [(r: UInt8, g: UInt8, b: UInt8)] {
+        let maxX = image.width - 1
+        let maxY = image.height - 1
+        let midX = image.width / 2
+        let midY = image.height / 2
+        return [
+            rgbPixel(image, x: 0, y: 0),
+            rgbPixel(image, x: maxX, y: 0),
+            rgbPixel(image, x: 0, y: maxY),
+            rgbPixel(image, x: maxX, y: maxY),
+            rgbPixel(image, x: midX, y: midY)
+        ]
     }
 }
